@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoteStash</title>
+
+  <!-- styles -->
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/responsive.css">
+  
+  <!-- PDF.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+
+  
+  <style>
+    #pdf-viewer {
+      text-align: center;
+      padding: 20px;
+    }
+    
+    #pdf-canvas {
+      border: 1px solid #000;
+      margin-top: 10px;
+      max-width: 100%;
+    }
+    
+    button {
+      margin: 5px;
+    }
+    /* CSS for Modern Buttons */
+.nav-button {
+    background-color: #37a83b; /* Modern green color */
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.nav-button span {
+    margin: 0 8px; /* Space between text and icon */
+}
+
+/* Hover Effects */
+.nav-button:hover {
+    background-color: #45a049;
+    transform: scale(1.05); /* Slightly larger */
+}
+
+/* Button Focus */
+.nav-button:focus {
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 150, 0, 0.5);
+}
+#pdfcontainer{
+  width: 670px;
+  margin: auto;
+}
+.section-box {
+  background-color: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  height: 95%;
+  width: 85%;
+  overflow:visible
+}
+  </style>
+</head>
+
+<body>
+
+  <section id="join-us">
+    <div class="section-box">
+      <div class="content-wrap">
+        <header>
+          <a class="header-logo"><span>NOTE</span>Stash</a>
+          <nav>
+            <a href="/index.html" class="nav-items">Home</a>
+            <a href="/aboutus.html" class="nav-items">About Us</a>
+            <a href="/upload.html" class="nav-items">Upload</a>
+            <a href="/login.html" class="nav-items">Logout</a>
+          </nav>
+        </header>
+      </div>
+<div id="pdfcontainer">
+      <div id="pdf-viewer">
+        <button class="nav-button" id="prev-page"><span>&larr;</span> Previous</button>
+        <button class="nav-button" id="next-page">Next <span>&rarr;</span></button>
+        <canvas id="pdf-canvas"></canvas>
+        <p>Page: <span id="page-num"></span> / <span id="page-count"></span></p>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // URL of the PDF
+    const url = 'unit4.pdf'; // Make sure this path is correct
+
+    // Initialize variables
+    let pdfDoc = null,
+        pageNum = 1,
+        pageRendering = false,
+        pageNumPending = null,
+        scale = 1.5,
+        canvas = document.getElementById('pdf-canvas'),
+        ctx = canvas.getContext('2d');
+
+    // Load the PDF document
+    pdfjsLib.getDocument(url).promise.then((pdfDoc_) => {
+      pdfDoc = pdfDoc_;
+      document.getElementById('page-count').textContent = pdfDoc.numPages;
+      
+      // Render the first page
+      renderPage(pageNum);
+    });
+
+    // Function to render a page
+    function renderPage(num) {
+      pageRendering = true;
+      
+      pdfDoc.getPage(num).then((page) => {
+        const viewport = page.getViewport({ scale: scale });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+        
+        const renderTask = page.render(renderContext);
+        
+        renderTask.promise.then(() => {
+          pageRendering = false;
+          if (pageNumPending !== null) {
+            renderPage(pageNumPending);
+            pageNumPending = null;
+          }
+        });
+
+        document.getElementById('page-num').textContent = num;
+      });
+    }
+
+    // Show next page
+    function queueRenderPage(num) {
+      if (pageRendering) {
+        pageNumPending = num;
+      } else {
+        renderPage(num);
+      }
+    }
+
+    document.getElementById('prev-page').addEventListener('click', () => {
+      if (pageNum <= 1) {
+        return;
+      }
+      pageNum--;
+      queueRenderPage(pageNum);
+    });
+
+    document.getElementById('next-page').addEventListener('click', () => {
+      if (pageNum >= pdfDoc.numPages) {
+        return;
+      }
+      pageNum++;
+      queueRenderPage(pageNum);
+    });
+
+  </script>
+
+</body>
+</html>
